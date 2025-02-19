@@ -3,6 +3,7 @@ const http = require('http');
 const socketIO = require('socket.io');
 const cors = require('cors');
 const path = require('path');
+require('dotenv').config();
 
 const app = express();
 app.use(cors());
@@ -16,6 +17,39 @@ const io = socketIO(server, {
 
 const PORT = process.env.PORT || 5000;
 const MAX_PLAYERS = 8;
+
+// Test endpoints
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: 'Backend is running!',
+    status: 'OK',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/room-info', (req, res) => {
+  const roomStats = {
+    totalRooms: rooms.size,
+    activeRooms: Array.from(rooms.entries()).map(([roomId, room]) => ({
+      roomId,
+      players: room.players.size,
+      hasAdmin: !!room.admin,
+      isGameRunning: room.gameStarted
+    }))
+  };
+  res.json(roomStats);
+});
+
+app.get('/api/server-status', (req, res) => {
+  res.json({
+    status: 'healthy',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    maxPlayers: MAX_PLAYERS
+  });
+});
 
 // Store room and user information
 const rooms = new Map();
