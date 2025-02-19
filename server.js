@@ -2,8 +2,6 @@ const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
 const cors = require('cors');
-const path = require('path');
-require('dotenv').config();
 
 const app = express();
 app.use(cors());
@@ -15,7 +13,7 @@ const io = socketIO(server, {
   }
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 const MAX_PLAYERS = 8;
 
 // Test endpoints
@@ -46,7 +44,6 @@ app.get('/api/server-status', (req, res) => {
     uptime: process.uptime(),
     memory: process.memoryUsage(),
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
     maxPlayers: MAX_PLAYERS
   });
 });
@@ -183,14 +180,6 @@ io.on('connection', (socket) => {
     }
   });
 });
-
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'client/build')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-  });
-}
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
