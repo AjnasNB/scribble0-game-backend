@@ -15,6 +15,40 @@ const io = socketIO(server, {
 });
 
 const PORT = process.env.PORT || 5000;
+const MAX_PLAYERS = 8;
+
+// Test endpoints
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: 'Backend is running!',
+    status: 'OK',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/room-info', (req, res) => {
+  const roomStats = {
+    totalRooms: rooms.size,
+    activeRooms: Array.from(rooms.entries()).map(([roomId, room]) => ({
+      roomId,
+      players: room.players.size,
+      hasAdmin: !!room.admin,
+      isGameRunning: room.gameStarted
+    }))
+  };
+  res.json(roomStats);
+});
+
+app.get('/api/server-status', (req, res) => {
+  res.json({
+    status: 'healthy',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    maxPlayers: MAX_PLAYERS
+  });
+});
 
 // Store room and user information
 const rooms = new Map();
@@ -51,8 +85,8 @@ io.on('connection', (socket) => {
         }
         room.admin = socket.id;
       } else {
-        if (room.players.size >= 2) {
-          socket.emit('error', { message: 'Room is full' });
+        if (room.players.size >= MAX_PLAYERS) {
+          socket.emit('error', { message: 'Room is full (max 8 players)' });
           socket.disconnect();
           return;
         }
@@ -64,12 +98,14 @@ io.on('connection', (socket) => {
     socket.emit('joined', {
       isAdmin: room.admin === socket.id,
       playerCount: room.players.size,
+      maxPlayers: MAX_PLAYERS,
       gameStarted: room.gameStarted
     });
 
     // Notify all users in the room about the new player count
     io.to(roomId).emit('playerCountUpdate', {
-      playerCount: room.players.size
+      playerCount: room.players.size,
+      maxPlayers: MAX_PLAYERS
     });
   });
 
@@ -134,7 +170,8 @@ io.on('connection', (socket) => {
       } else if (room.players.has(socket.id)) {
         room.players.delete(socket.id);
         io.to(roomId).emit('playerCountUpdate', {
-          playerCount: room.players.size
+          playerCount: room.players.size,
+          maxPlayers: MAX_PLAYERS
         });
       }
       
