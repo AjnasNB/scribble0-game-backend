@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 app.use(cors());
@@ -13,40 +14,7 @@ const io = socketIO(server, {
   }
 });
 
-const PORT = 5000;
-const MAX_PLAYERS = 8;
-
-// Test endpoints
-app.get('/api/test', (req, res) => {
-  res.json({
-    message: 'Backend is running!',
-    status: 'OK',
-    timestamp: new Date().toISOString()
-  });
-});
-
-app.get('/api/room-info', (req, res) => {
-  const roomStats = {
-    totalRooms: rooms.size,
-    activeRooms: Array.from(rooms.entries()).map(([roomId, room]) => ({
-      roomId,
-      players: room.players.size,
-      hasAdmin: !!room.admin,
-      isGameRunning: room.gameStarted
-    }))
-  };
-  res.json(roomStats);
-});
-
-app.get('/api/server-status', (req, res) => {
-  res.json({
-    status: 'healthy',
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    timestamp: new Date().toISOString(),
-    maxPlayers: MAX_PLAYERS
-  });
-});
+const PORT = process.env.PORT || 5000;
 
 // Store room and user information
 const rooms = new Map();
@@ -83,8 +51,8 @@ io.on('connection', (socket) => {
         }
         room.admin = socket.id;
       } else {
-        if (room.players.size >= MAX_PLAYERS) {
-          socket.emit('error', { message: 'Room is full (max 8 players)' });
+        if (room.players.size >= 2) {
+          socket.emit('error', { message: 'Room is full' });
           socket.disconnect();
           return;
         }
@@ -96,14 +64,12 @@ io.on('connection', (socket) => {
     socket.emit('joined', {
       isAdmin: room.admin === socket.id,
       playerCount: room.players.size,
-      maxPlayers: MAX_PLAYERS,
       gameStarted: room.gameStarted
     });
 
     // Notify all users in the room about the new player count
     io.to(roomId).emit('playerCountUpdate', {
-      playerCount: room.players.size,
-      maxPlayers: MAX_PLAYERS
+      playerCount: room.players.size
     });
   });
 
@@ -168,8 +134,7 @@ io.on('connection', (socket) => {
       } else if (room.players.has(socket.id)) {
         room.players.delete(socket.id);
         io.to(roomId).emit('playerCountUpdate', {
-          playerCount: room.players.size,
-          maxPlayers: MAX_PLAYERS
+          playerCount: room.players.size
         });
       }
       
@@ -180,6 +145,14 @@ io.on('connection', (socket) => {
     }
   });
 });
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'client/build')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+  });
+}
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
