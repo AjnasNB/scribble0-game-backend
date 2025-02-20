@@ -186,22 +186,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle adding shapes
-  socket.on('addShape', ({ roomId, shape }) => {
-    const room = rooms.get(roomId);
-    if (room && !room.admin && room.players.has(socket.id) && room.gameStarted) {
-      io.in(roomId).emit('shapeAdded', { shape });
-    }
-  });
-
-  // Handle moving shapes
-  socket.on('moveShape', ({ roomId, shapeId, x, y }) => {
-    const room = rooms.get(roomId);
-    if (room && !room.admin && room.players.has(socket.id) && room.gameStarted) {
-      io.in(roomId).emit('shapeMoved', { shapeId, x, y });
-    }
-  });
-
   // Handle disconnection
   socket.on('disconnect', () => {
     for (const [roomId, room] of rooms.entries()) {
