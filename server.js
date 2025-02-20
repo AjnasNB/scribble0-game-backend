@@ -10,32 +10,31 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
   'https://scribble0byajnas.vercel.app',
-  'http://scribble.ajnasnb.com',
-  'https://scribble.ajnasnb.com'
+  'https://scribble.ajnasnb.com',
+  'http://scribble.ajnasnb.com'
 ];
 
+// Configure CORS for Express
 app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: allowedOrigins,
+  methods: ['GET', 'POST'],
   credentials: true
 }));
 
 const server = http.createServer(app);
+
+// Configure Socket.IO with CORS
 const io = socketIO(server, {
   cors: {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true,
-    allowedHeaders: ["my-custom-header"]
-  }
+    transports: ['websocket', 'polling']
+  },
+  allowEIO3: true // Allow Engine.IO version 3 clients
 });
 
-const PORT =  5000;
+const PORT = 5000;
 const MAX_PLAYERS = 8;
 
 // Test endpoints
