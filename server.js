@@ -5,16 +5,37 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-app.use(cors());
+
+// CORS configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://scribble0byajnas.vercel.app',
+  'http://scribble.ajnasnb.com',
+  'https://scribble.ajnasnb.com'
+];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
+    allowedHeaders: ["my-custom-header"]
   }
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT =  5000;
 const MAX_PLAYERS = 8;
 
 // Test endpoints
