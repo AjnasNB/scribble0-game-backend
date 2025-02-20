@@ -28,14 +28,23 @@ const io = socketIO(server, {
   cors: {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
-    credentials: true,
-    transports: ['websocket', 'polling']
+    credentials: true
   },
-  allowEIO3: true // Allow Engine.IO version 3 clients
+  transports: ['websocket'],
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  upgradeTimeout: 30000,
+  allowUpgrades: true,
+  cookie: false
 });
 
 const PORT = 5000;
 const MAX_PLAYERS = 8;
+
+// Add connection logging
+io.engine.on("connection_error", (err) => {
+  console.log("Connection error:", err);
+});
 
 // Test endpoints
 app.get('/api/test', (req, res) => {
