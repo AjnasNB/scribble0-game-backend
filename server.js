@@ -39,7 +39,7 @@ const io = socketIO(server, {
 });
 
 const PORT = 5000;
-const MAX_PLAYERS = 8;
+const MAX_PLAYERS = 12;
 
 // Add connection logging
 io.engine.on("connection_error", (err) => {
@@ -115,7 +115,7 @@ io.on('connection', (socket) => {
         room.admin = socket.id;
       } else {
         if (room.players.size >= MAX_PLAYERS) {
-          socket.emit('error', { message: 'Room is full (max 8 players)' });
+          socket.emit('error', { message: 'Room is full (max 12 players)' });
           socket.disconnect();
           return;
         }
